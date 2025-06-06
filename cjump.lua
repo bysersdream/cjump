@@ -1,12 +1,49 @@
--- InfinityCodeX GUI (Redesigned)
--- ✅ Functionality preserved
--- 🎨 GUI Appearance Enhanced:
---     - Rounded corners
---     - Frame outlines with UIStroke
---     - Draggable main window
---     - Slight transparency for modern look
--- 🛠️ To customize colors and more, see `BackgroundColor3`, `TextColor3`, etc.
--- ⚠️ Ensure game permissions allow GUI injection
+
+
+-- GUI Redesign Patch Inject --
+local function enhanceFrameDesign(frame)
+    if not frame:FindFirstChildOfClass("UICorner") then
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = frame
+    end
+    if not frame:FindFirstChildOfClass("UIStroke") then
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = 1
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Color = Color3.fromRGB(100, 100, 100)
+        stroke.Parent = frame
+    end
+end
+
+local function makeDraggable(guiElement)
+    guiElement.Active = true
+    guiElement.Draggable = true
+end
+
+-- Применяем стили ко всем Frame и Button в ScreenGui
+local function applyModernStyle()
+    local screenGui = game:GetService("CoreGui"):FindFirstChild("ScreenGui") or script.Parent
+    if not screenGui then return end
+
+    for _, instance in ipairs(screenGui:GetDescendants()) do
+        if instance:IsA("Frame") or instance:IsA("TextButton") or instance:IsA("TextBox") then
+            enhanceFrameDesign(instance)
+        end
+    end
+
+    -- Сделать главное окно перетаскиваемым (если есть)
+    local main = screenGui:FindFirstChild("Main")
+    if main then
+        makeDraggable(main)
+    end
+end
+
+-- Задержка, чтобы UI успел прогрузиться
+task.delay(1, applyModernStyle)
+
+-- Конец патча
+
 
 local alreadyExecuted = false
 
