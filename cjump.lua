@@ -1,15 +1,5 @@
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-
-local plrs = game:GetService'Players'
-local plr = plrs.LocalPlayer
-local mouse = plr:GetMouse()
-
-local hasDoubleJumped = false
-local canTripleJump = false -- Флаг для тройного прыжка
-
--- Создаем GUI
+local player = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
 if CoreGui:FindFirstChild("ChaosScriptGui") then
@@ -19,7 +9,6 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ChaosScriptGui"
 ScreenGui.Parent = CoreGui
-ScreenGui.ResetOnSpawn = false -- Чтобы GUI не исчезал после респавна
 
 local function createRoundedFrame(parent, size, position)
     local frame = Instance.new("Frame")
@@ -71,7 +60,7 @@ local function createLabel(parent, size, position, text, fontsize)
     return label
 end
 
--- GUI для ключа
+-- Список валидных ключей
 local keys = {
     ["XAO0466"] = true,
     ["6Y1YJ4K"] = true,
@@ -101,10 +90,12 @@ local keys = {
     ["T6BYLQP"] = true,
 }
 
+-- Функция проверки ключа
 local function isKeyValid(inputKey)
     return keys[inputKey] == true
 end
 
+-- Создаем основной Frame для ввода ключа
 local keyFrame = createRoundedFrame(ScreenGui, UDim2.new(0, 400, 0, 230), UDim2.new(0.35, 0, 0.4, 0))
 local keyLabel = createLabel(keyFrame, UDim2.new(1,0,0,30), UDim2.new(0,0,0,10), "Enter your passkey", 22)
 
@@ -139,7 +130,7 @@ copyBtn.MouseButton1Click:Connect(function()
     copyBtn.Text = "Copy link"
 end)
 
--- GUI для меню
+-- Создаём основное меню, которое будет показываться после успешного ввода ключа
 local main = createRoundedFrame(ScreenGui, UDim2.new(0, 340, 0, 220), UDim2.new(0.02, 0, 0.6, 0))
 main.Visible = false
 
@@ -158,13 +149,21 @@ openBtn.TextSize = 18
 
 openmain.Visible = false
 
--- Кнопка для Double/Triple Jump
-local jumpButton = createButton(main, UDim2.new(0, 200, 0, 50), UDim2.new(0.2, 0, 0.8, 0), "Double/Triple Jump", Color3.fromRGB(100, 200, 100))
-jumpButton.MouseButton1Click:Connect(function()
-    performJump()
+-- Проверка ключа и открытие меню
+submitButton.MouseButton1Down:Connect(function()
+    local input = keyInput.Text:upper():gsub("%s+", "")
+    if isKeyValid(input) then
+        infoLabel.Text = "Key accepted! Loading menu..."
+        wait(0.3)
+        keyFrame.Visible = false
+        main.Visible = true
+        openmain.Visible = true
+    else
+        infoLabel.Text = "Invalid or inactive key!"
+    end
 end)
 
--- Функции для оружия
+-- Кнопки оружия — просто пример, адаптируй под свои нужды
 emeraldBtn.MouseButton1Down:Connect(function()
     local args = { [1] = "Emerald Greatsword" }
     local menuScreen = player.PlayerGui:FindFirstChild("Menu Screen")
@@ -218,96 +217,52 @@ openBtn.MouseButton1Down:Connect(function()
     openmain.Visible = false
 end)
 
-submitButton.MouseButton1Down:Connect(function()
-    local input = keyInput.Text:upper():gsub("%s+", "")
-    if isKeyValid(input) then
-        infoLabel.Text = "Key accepted! Loading menu..."
-        wait(0.3)
-        keyFrame.Visible = false
-        main.Visible = true
-        openmain.Visible = true
-    else
-        infoLabel.Text = "Invalid or inactive key!"
-    end
-end)
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
 
-local function performJump()
+local plrs = game:GetService'Players'
+local plr = plrs.LocalPlayer
+local mouse = plr:GetMouse()
+
+local hasDoubleJumped = false
+
+local function performDoubleJump()
     local character = LocalPlayer.Character
     local humanoid = character and character:FindFirstChildOfClass('Humanoid')
-
     if humanoid and not hasDoubleJumped then
         humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         wait(0.1)
+        for _,v in next,plr.Backpack:GetChildren() do
+            if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
+                v.Parent = plr.Character
+                wait()
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                wait(0.1)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                v.RemoteEvent:FireServer(mouse.Hit.LookVector)
+                v.Parent = plr.Backpack
+            end
+        end
 
-        local hasGrenade = false
-        local hasC4 = false
-
-        -- Проверяем наличие гранаты и C4 в инвентаре
-        for _, v in next, plr.Backpack:GetChildren() do
+        wait(0.1)
+        for _,v in next,plr.Backpack:GetChildren() do
             if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                hasGrenade = true
-            elseif v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
-                hasC4 = true
+                v.Parent = plr.Character
+                wait()
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                wait(0.1)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                v:Activate()
+                v.Parent = plr.Backpack
             end
         end
-
-        if hasGrenade and hasC4 then
-            -- Тройной прыжок
-            canTripleJump = true
-            humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-            wait(0.1)
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-
-            for _, v in next, plr.Backpack:GetChildren() do
-                if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                    v.Parent = plr.Character
-                    wait()
-                    humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                    wait(0.1)
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                    v:Activate()
-                    v.Parent = plr.Backpack
-                    break
-                end
-            end
-             hasDoubleJumped = true
-        elseif hasGrenade or hasC4 then
-            -- Двойной прыжок (если есть только граната или C4)
-              humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-              wait(0.1)
-              humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-             hasDoubleJumped = true
-               if hasGrenade then
-                for _, v in next, plr.Backpack:GetChildren() do
-                  if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                    v.Parent = plr.Character
-                    wait()
-                    v:Activate()
-                    v.Parent = plr.Backpack
-                    break
-                  end
-                end
-              elseif hasC4 then
-                for _, v in next, plr.Backpack:GetChildren() do
-                  if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
-                    v.Parent = plr.Character
-                    wait()
-                    v.RemoteEvent:FireServer(mouse.Hit.LookVector)
-                    v.Parent = plr.Backpack
-                    break
-                  end
-                end
-              end
-        end
-
         hasDoubleJumped = true
     end
 end
 
--- Сбрасываем флаг doubleJumped при приземлении
-humanoid.StateChanged:Connect(function(oldState, newState)
-    if newState == Enum.HumanoidStateType.Landed then
-        hasDoubleJumped = false
-        canTripleJump = false -- Сбрасываем флаг тройного прыжка
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if input.KeyCode == Enum.KeyCode.V and not gameProcessedEvent then
+        performDoubleJump()
     end
 end)
