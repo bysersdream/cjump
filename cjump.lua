@@ -18,12 +18,7 @@ local doubleJumpButton = section:addButton({
     Text = "Double Jump",
     Callback = function()
         local Players = game:GetService("Players")
-        local UserInputService = game:GetService("UserInputService")
         local LocalPlayer = Players.LocalPlayer
-
-        local plrs = game:GetService'Players'
-        local plr = plrs.LocalPlayer
-        local mouse = plr:GetMouse()
 
         local hasDoubleJumped = false
 
@@ -32,22 +27,17 @@ local doubleJumpButton = section:addButton({
             local humanoid = character and character:FindFirstChildOfClass('Humanoid')
             if humanoid and not hasDoubleJumped then
                 humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                wait(0.1)
-                for _,v in next,plr.Backpack:GetChildren() do
-                    if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                        v.Parent = plr.Character
-                        wait()
-                        humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                        wait(0.1)
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        v:Activate()
-                        v.Parent = plr.Backpack
-                    end
-                end
                 hasDoubleJumped = true
             end
         end
-        performDoubleJump()
+
+        local function onJumpRequest()
+            if not hasDoubleJumped then
+                performDoubleJump()
+            end
+        end
+
+        LocalPlayer.Character.Humanoid.Jumping:Connect(onJumpRequest)
     end
 })
 
@@ -55,49 +45,32 @@ local tripleJumpButton = section:addButton({
     Text = "Triple Jump",
     Callback = function()
         local Players = game:GetService("Players")
-        local UserInputService = game:GetService("UserInputService")
         local LocalPlayer = Players.LocalPlayer
 
-        local plrs = game:GetService'Players'
-        local plr = plrs.LocalPlayer
-        local mouse = plr:GetMouse()
+        local jumpsRemaining = 2
 
-        local hasDoubleJumped = false
-
-        local function performDoubleJump()
+        local function performJump()
             local character = LocalPlayer.Character
             local humanoid = character and character:FindFirstChildOfClass('Humanoid')
-            if humanoid and not hasDoubleJumped then
+            if humanoid and jumpsRemaining > 0 then
                 humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                wait(0.1)
-
-                for _,v in next,plr.Backpack:GetChildren() do
-                    if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
-                        v.Parent = plr.Character
-                        wait()
-                        humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                        wait(0.1)
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        v.RemoteEvent:FireServer(mouse.Hit.LookVector)
-                        v.Parent = plr.Backpack
-                    end
-                end
-
-                wait(0.1)
-                for _,v in next,plr.Backpack:GetChildren() do
-                    if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                        v.Parent = plr.Character
-                        wait()
-                        humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                        wait(0.1)
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        v:Activate()
-                        v.Parent = plr.Backpack
-                    end
-                end
-                hasDoubleJumped = true
+                jumpsRemaining = jumpsRemaining - 1
             end
         end
-        performDoubleJump()
+
+        local function onJumpRequest()
+            if jumpsRemaining > 0 then
+                performJump()
+            end
+        end
+
+        LocalPlayer.Character.Humanoid.Jumping:Connect(onJumpRequest)
+
+        -- Reset jumpsRemaining when player touches the ground
+        LocalPlayer.Character.Humanoid.StateChanged:Connect(function(oldState, newState)
+            if newState == Enum.HumanoidStateType.Landed then
+                jumpsRemaining = 2
+            end
+        end)
     end
 })
