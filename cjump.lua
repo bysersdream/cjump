@@ -1,62 +1,52 @@
 local gui = Instance.new("ScreenGui")
-gui.Name = "DoubleJumpGUI"
-gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+gui.Name = "FreeGamepass"
+gui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.3, 0, 0.3, 0)
+frame.Position = UDim2.new(0.35, 0, 0.35, 0)
+frame.BackgroundColor3 = Color3.new(0, 0, 0)
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Size = UDim2.new(1, 0, 0.2, 0)
+textLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+textLabel.TextColor3 = Color3.new(1, 1, 1)
+textLabel.Text = "Free Gamepass Script"
+textLabel.Parent = frame
 
 local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 200, 0, 50)
-button.Position = UDim2.new(0.5, -100, 0.5, -25)
-button.Text = "Double Jump"
-button.BackgroundColor3 = Color3.new(0, 0.5, 1)
+button.Size = UDim2.new(0.8, 0, 0.2, 0)
+button.Position = UDim2.new(0.1, 0, 0.3, 0)
+button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 button.TextColor3 = Color3.new(1, 1, 1)
-button.Font = Enum.Font.SourceSansBold
-button.Parent = gui
+button.Text = "Equip Free Weapon"
+button.Parent = frame
 
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+button.MouseButton1Click:Connect(function()
+    local weaponId = 850456363
+    local weapon = game:GetService("InsertService"):LoadAsset(weaponId)
+    weapon.Parent = game.Players.LocalPlayer.Character
 
-local function doubleJump()
-    if humanoid.FloorMaterial ~= Enum.Material.Air then
-        humanoid.Jump = true
-        wait(0.1) -- Short delay before throwing the grenade/C4
-        
-        -- Attempt to find a grenade or C4 in the player's backpack
-        local grenade = player.Backpack:FindFirstChild("Grenade")
-        local c4 = player.Backpack:FindFirstChild("C4")
-        
-        local item = grenade or c4 -- Prioritize grenade if both exist. Adjust logic as needed
-        
-        if item then
-            -- Simulate equipping the item if necessary
-            if character:FindFirstChild("ToolEquipped") then
-                character.ToolEquipped:Destroy()
-            end
-            
-            -- Simulate throwing/detonating the item (replace with actual item usage logic)
-            local mouse = player:GetMouse()
-            local aimDirection = mouse.Hit.p - character.HumanoidRootPart.Position
-            aimDirection = aimDirection.Unit * 50 -- Adjust throw force as needed
+    -- Additional code to handle equipping the weapon (e.g., animations, etc.)
+    -- This part depends on how the original game handles weapon equipping.
 
-            local bomb = item:Clone()
-            bomb.Parent = workspace
-            bomb.Position = character.HumanoidRootPart.Position
-
-            local bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.Velocity = aimDirection
-            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVelocity.Parent = bomb
-
-            game:GetService("Debris"):AddItem(bomb, 3) -- Destroy the bomb after 3 seconds
-
-            item:Destroy()  -- Remove item from inventory
-
-
-        else
-            print("No grenade or C4 found in backpack.")
-        end
-    else
-        print("Cannot double jump in air.")
+    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+    if humanoid then
+      humanoid:EquipTool(weapon)
     end
-end
+end)
 
-button.MouseButton1Click:Connect(doubleJump)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0.2, 0, 0.2, 0)
+closeButton.Position = UDim2.new(0.8, 0, 0, 0)
+closeButton.BackgroundColor3 = Color3.new(0.8, 0, 0)
+closeButton.TextColor3 = Color3.new(1, 1, 1)
+closeButton.Text = "X"
+closeButton.Parent = frame
+
+closeButton.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
