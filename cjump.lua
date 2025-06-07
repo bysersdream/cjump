@@ -1,76 +1,89 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
 
-local window = library.new({
-    Title = "Double/Triple Jump",
-    Size = UDim2.fromOffset(300, 150),
-    Theme = "Dark"
-})
+local plrs = game:GetService'Players'
+local plr = plrs.LocalPlayer
+local mouse = plr:GetMouse()
 
-local tab = window:addTab({
-    Title = "Jumps"
-})
+local hasDoubleJumped = false
 
-local section = tab:addSection({
-    Title = "Jump Settings"
-})
+local function performJump(jumpType)
+    local character = LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass('Humanoid')
+    if humanoid and not hasDoubleJumped then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        wait(0.1)
 
-local doubleJumpButton = section:addButton({
-    Text = "Double Jump",
-    Callback = function()
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-
-        local hasDoubleJumped = false
-
-        local function performDoubleJump()
-            local character = LocalPlayer.Character
-            local humanoid = character and character:FindFirstChildOfClass('Humanoid')
-            if humanoid and not hasDoubleJumped then
+        if jumpType == "Triple" then
+            -- C4 jump
+            for _,v in next,plr.Backpack:GetChildren() do
+                if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
+                    v.Parent = plr.Character
+                    wait()
+                    humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                    wait(0.1)
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    v.RemoteEvent:FireServer(mouse.Hit.LookVector)
+                    v.Parent = plr.Backpack
+                    break -- Prevent multiple C4 jumps
+                end
+            end
+            wait(0.1) --small pause before grenade jump
+        end
+        -- Grenade jump (common for both double and triple)
+        for _,v in next,plr.Backpack:GetChildren() do
+            if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
+                v.Parent = plr.Character
+                wait()
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                wait(0.1)
                 humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                hasDoubleJumped = true
+                v:Activate()
+                v.Parent = plr.Backpack
+                break --Prevent multiple grenade jumps
             end
         end
-
-        local function onJumpRequest()
-            if not hasDoubleJumped then
-                performDoubleJump()
-            end
-        end
-
-        LocalPlayer.Character.Humanoid.Jumping:Connect(onJumpRequest)
+        hasDoubleJumped = true
     end
-})
+end
 
-local tripleJumpButton = section:addButton({
-    Text = "Triple Jump",
-    Callback = function()
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
+local function onButtonClicked()
+    local hasC4 = false
+    local hasGrenade = false
 
-        local jumpsRemaining = 2
-
-        local function performJump()
-            local character = LocalPlayer.Character
-            local humanoid = character and character:FindFirstChildOfClass('Humanoid')
-            if humanoid and jumpsRemaining > 0 then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                jumpsRemaining = jumpsRemaining - 1
-            end
+    for _, v in next, plr.Backpack:GetChildren() do
+        if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
+            hasC4 = true
+        elseif v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
+            hasGrenade = true
         end
-
-        local function onJumpRequest()
-            if jumpsRemaining > 0 then
-                performJump()
-            end
-        end
-
-        LocalPlayer.Character.Humanoid.Jumping:Connect(onJumpRequest)
-
-        -- Reset jumpsRemaining when player touches the ground
-        LocalPlayer.Character.Humanoid.StateChanged:Connect(function(oldState, newState)
-            if newState == Enum.HumanoidStateType.Landed then
-                jumpsRemaining = 2
-            end
-        end)
     end
-})
+
+    if hasC4 and hasGrenade then
+        performJump("Triple")
+    elseif hasC4 or hasGrenade then
+        performJump("Double")
+    end
+end
+
+-- GUI setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer.PlayerGui
+ScreenGui.Name = "JumpGui"
+
+local Button = Instance.new("TextButton")
+Button.Parent = ScreenGui
+Button.Size = UDim2.new(0, 200, 0, 50)
+Button.Position = UDim2.new(0.5, -100, 0.8, 0)
+Button.Text = "Double/Triple Jump"
+Button.BackgroundColor3 = Color3.new(0, 0.5, 1)
+Button.TextColor3 = Color3.new(1, 1, 1)
+Button.Font = Enum.Font.SourceSansBold
+Button.MouseButton1Click:Connect(onButtonClicked)
+
+UserInputService.JumpRequest:Connect(function()
+	if not hasDoubleJumped then
+		onButtonClicked()
+	end
+end)
