@@ -9,6 +9,7 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ChaosScriptGui"
 ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false -- Make the GUI persist after respawn
 
 local function createRoundedFrame(parent, size, position)
     local frame = Instance.new("Frame")
@@ -60,85 +61,12 @@ local function createLabel(parent, size, position, text, fontsize)
     return label
 end
 
--- Список валидных ключей
-local keys = {
-    ["XAO0466"] = true,
-    ["6Y1YJ4K"] = true,
-    ["0Z2S23Y"] = true,
-    ["14Q2B6A"] = true,
-    ["2G2RZAO"] = true,
-    ["PCMPRK7"] = true,
-    ["X23JF02"] = true,
-    ["RI3D1FU"] = true,
-    ["A9X7ZQP"] = true,
-    ["BX4YJMR"] = true,
-    ["C8K2VNS"] = true,
-    ["D5MPWQX"] = true,
-    ["E7JZLRT"] = true,
-    ["F2YUKBC"] = true,
-    ["G1QXVNH"] = true,
-    ["H9RDAPF"] = true,
-    ["J6ZKTME"] = true,
-    ["K3BVYXS"] = true,
-    ["L8PNDQA"] = true,
-    ["M4FJREU"] = true,
-    ["N0CXSVT"] = true,
-    ["P5YHZKB"] = true,
-    ["Q2MDLWR"] = true,
-    ["R7UKXJF"] = true,
-    ["S1ZNGTV"] = true,
-    ["T6BYLQP"] = true,
-}
-
--- Функция проверки ключа
-local function isKeyValid(inputKey)
-    return keys[inputKey] == true
-end
-
--- Создаем основной Frame для ввода ключа
-local keyFrame = createRoundedFrame(ScreenGui, UDim2.new(0, 400, 0, 230), UDim2.new(0.35, 0, 0.4, 0))
-local keyLabel = createLabel(keyFrame, UDim2.new(1,0,0,30), UDim2.new(0,0,0,10), "Enter your passkey", 22)
-
-local keyInput = Instance.new("TextBox")
-keyInput.Size = UDim2.new(0.9, 0, 0, 40)
-keyInput.Position = UDim2.new(0.05, 0, 0, 50)
-keyInput.PlaceholderText = "Enter key here"
-keyInput.Text = ""
-keyInput.ClearTextOnFocus = false
-keyInput.BackgroundColor3 = Color3.fromRGB(30,30,30)
-keyInput.TextColor3 = Color3.new(1,1,1)
-keyInput.Font = Enum.Font.GothamBold
-keyInput.TextSize = 18
-keyInput.Parent = keyFrame
-local inputCorner = Instance.new("UICorner")
-inputCorner.CornerRadius = UDim.new(0,10)
-inputCorner.Parent = keyInput
-
-local submitButton = createButton(keyFrame, UDim2.new(0.9, 0, 0, 40), UDim2.new(0.05, 0, 0, 100), "Confirm", Color3.fromRGB(216, 221, 86))
-
-local infoLabel = createLabel(keyFrame, UDim2.new(1,0,0,20), UDim2.new(0,0,0,135), "", 16)
-
-local discordInfo = createLabel(keyFrame, UDim2.new(1, -20, 0, 40), UDim2.new(0,10,0,150), 
-"To get your key, go to Discord: #support", 16)
-
-local copyBtn = createButton(keyFrame, UDim2.new(0, 160, 0, 35), UDim2.new(0.5, -80, 0, 190), "Copy link", Color3.fromRGB(70, 130, 180))
-copyBtn.TextColor3 = Color3.new(1,1,1)
-copyBtn.MouseButton1Click:Connect(function()
-    setclipboard("https://discord.gg/bxubNMDf")
-    copyBtn.Text = "Copied!"
-    wait(2)
-    copyBtn.Text = "Copy link"
-end)
-
--- Создаём основное меню, которое будет показываться после успешного ввода ключа
-local main = createRoundedFrame(ScreenGui, UDim2.new(0, 340, 0, 220), UDim2.new(0.02, 0, 0.6, 0))
-main.Visible = false
+-- Создаём основное меню
+local main = createRoundedFrame(ScreenGui, UDim2.new(0, 340, 0, 120), UDim2.new(0.33, 0, 0.3, 0))
 
 local title = createLabel(main, UDim2.new(1, 0, 0, 40), UDim2.new(0,0,0,0), "Chaos Script", 22)
 
-local emeraldBtn = createButton(main, UDim2.new(0, 150, 0, 50), UDim2.new(0.05, 0, 0.25, 0), "Emerald Greatsword", Color3.fromRGB(0, 150, 150))
-local bloodBtn = createButton(main, UDim2.new(0, 150, 0, 50), UDim2.new(0.55, 0, 0.25, 0), "Blood Dagger", Color3.fromRGB(150, 0, 0))
-local frostBtn = createButton(main, UDim2.new(0, 150, 0, 50), UDim2.new(0.05, 0, 0.55, 0), "Frost Spear", Color3.fromRGB(100, 100, 255))
+local doubleJumpBtn = createButton(main, UDim2.new(0, 300, 0, 50), UDim2.new(0.05, 0, 0.3, 0), "Double Jump", Color3.fromRGB(216, 221, 86))
 
 local closeBtn = createButton(main, UDim2.new(0, 40, 0, 40), UDim2.new(0.87, 0, 0, 0), "❌", Color3.fromRGB(216, 221, 86))
 closeBtn.TextSize = 24
@@ -147,63 +75,53 @@ local openmain = createRoundedFrame(ScreenGui, UDim2.new(0, 100, 0, 35), UDim2.n
 local openBtn = createButton(openmain, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Menu", Color3.fromRGB(216, 221, 86))
 openBtn.TextSize = 18
 
-openmain.Visible = false
+-- Initially hide the menu and show open button
+main.Visible = false
+openmain.Visible = true
 
--- Проверка ключа и открытие меню
-submitButton.MouseButton1Down:Connect(function()
-    local input = keyInput.Text:upper():gsub("%s+", "")
-    if isKeyValid(input) then
-        infoLabel.Text = "Key accepted! Loading menu..."
-        wait(0.3)
-        keyFrame.Visible = false
-        main.Visible = true
-        openmain.Visible = true
-    else
-        infoLabel.Text = "Invalid or inactive key!"
-    end
-end)
+-- Double Jump Function
+local UserInputService = game:GetService("UserInputService")
 
--- Кнопки оружия — просто пример, адаптируй под свои нужды
-emeraldBtn.MouseButton1Down:Connect(function()
-    local args = { [1] = "Emerald Greatsword" }
-    local menuScreen = player.PlayerGui:FindFirstChild("Menu Screen")
-    if menuScreen then
-        menuScreen.RemoteEvent:FireServer(unpack(args))
-        menuScreen:Remove()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Weapon",
-            Text = "Emerald Greatsword obtained!",
-            Duration = 3
-        })
-    end
-end)
+local hasDoubleJumped = false
 
-bloodBtn.MouseButton1Down:Connect(function()
-    local args = { [1] = "Blood Dagger" }
-    local menuScreen = player.PlayerGui:FindFirstChild("Menu Screen")
-    if menuScreen then
-        menuScreen.RemoteEvent:FireServer(unpack(args))
-        menuScreen:Remove()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Weapon",
-            Text = "Blood Dagger obtained!",
-            Duration = 3
-        })
-    end
-end)
+local function performDoubleJump()
+    local character = player.Character
+    local humanoid = character and character:FindFirstChildOfClass('Humanoid')
+    if humanoid and not hasDoubleJumped then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        wait(0.1)
 
-frostBtn.MouseButton1Down:Connect(function()
-    local args = { [1] = "Frost Spear" }
-    local menuScreen = player.PlayerGui:FindFirstChild("Menu Screen")
-    if menuScreen then
-        menuScreen.RemoteEvent:FireServer(unpack(args))
-        menuScreen:Remove()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Weapon",
-            Text = "Frost Spear obtained!",
-            Duration = 3
-        })
+        for _,v in next,player.Backpack:GetChildren() do
+            if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
+                v.Parent = player.Character
+                wait()
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                wait(0.1)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                v.RemoteEvent:FireServer(mouse.Hit.LookVector)
+                v.Parent = player.Backpack
+            end
+        end
+
+        wait(0.1)
+        for _,v in next,player.Backpack:GetChildren() do
+            if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
+                v.Parent = player.Character
+                wait()
+                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+                wait(0.1)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                v:Activate()
+                v.Parent = player.Backpack
+            end
+        end
+        hasDoubleJumped = true
     end
+end
+
+-- Button click events
+doubleJumpBtn.MouseButton1Down:Connect(function()
+    performDoubleJump()
 end)
 
 closeBtn.MouseButton1Down:Connect(function()
@@ -212,57 +130,6 @@ closeBtn.MouseButton1Down:Connect(function()
 end)
 
 openBtn.MouseButton1Down:Connect(function()
-    keyFrame.Visible = false
     main.Visible = true
     openmain.Visible = false
-end)
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
-
-local plrs = game:GetService'Players'
-local plr = plrs.LocalPlayer
-local mouse = plr:GetMouse()
-
-local hasDoubleJumped = false
-
-local function performDoubleJump()
-    local character = LocalPlayer.Character
-    local humanoid = character and character:FindFirstChildOfClass('Humanoid')
-    if humanoid and not hasDoubleJumped then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        wait(0.1)
-        for _,v in next,plr.Backpack:GetChildren() do
-            if v.Name == 'C4' and v:FindFirstChild'RemoteEvent' then
-                v.Parent = plr.Character
-                wait()
-                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                wait(0.1)
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                v.RemoteEvent:FireServer(mouse.Hit.LookVector)
-                v.Parent = plr.Backpack
-            end
-        end
-
-        wait(0.1)
-        for _,v in next,plr.Backpack:GetChildren() do
-            if v.Name == 'Grenade' and v:FindFirstChild'RemoteEvent' then
-                v.Parent = plr.Character
-                wait()
-                humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-                wait(0.1)
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                v:Activate()
-                v.Parent = plr.Backpack
-            end
-        end
-        hasDoubleJumped = true
-    end
 end
-
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.V and not gameProcessedEvent then
-        performDoubleJump()
-    end
-end)
