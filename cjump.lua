@@ -36,7 +36,7 @@ local function getUserRank(userId)
         return "User" -- Current player using script is always User (if no base rank)
     end
     
-    -- If player is in activeScriptUsers, they are User
+    -- If player is in activeScriptUsers (from server), they are User
     if activeScriptUsers[userId] then
         return "User"
     end
@@ -48,8 +48,12 @@ end
 -- Function to check if player is using the script
 local function isUsingScript(targetPlayer)
     if targetPlayer == player then return true end
+    -- Check if player is in activeScriptUsers (updated by server)
+    if activeScriptUsers[targetPlayer.UserId] then
+        return true
+    end
+    -- Also check by rank (for players with base ranks)
     local rank = getUserRank(targetPlayer.UserId)
-    -- Player is using script if they have rank Developer, Admin, Premium, or User
     return rank == "Developer" or rank == "Admin" or rank == "Premium" or rank == "User"
 end
 
@@ -510,7 +514,11 @@ local function createPlayerCard(targetPlayer, parentFrame, position)
         local kickBtn = createButton(card, UDim2.new(0, 85, 0, 38), UDim2.new(1, -95, 0, 28.5), "Kick", accentColor)
         kickBtn.TextSize = 16
         kickBtn.MouseButton1Click:Connect(function()
-            targetPlayer:Kick("Kicked by " .. player.Name)
+            -- Send kick request to server
+            local kickRequest = ReplicatedStorage:FindFirstChild("ChaosKickRequest")
+            if kickRequest then
+                kickRequest:FireServer(targetPlayer.UserId)
+            end
         end)
     end
     
