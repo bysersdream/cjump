@@ -1,0 +1,112 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- Rank system (same as client)
+local baseRanks = {
+    [7143356409] = "Developer", -- WalkerThroughTime1
+    [8684351140] = "Developer", -- h1tlisttt
+    -- Add more users here
+    -- [userId] = "Developer" or "Admin" or "Premium"
+}
+
+-- Track active script users
+local activeScriptUsers = {}
+
+-- Function to get user rank
+local function getUserRank(userId)
+    local baseRank = baseRanks[userId]
+    if baseRank then
+        return baseRank
+    end
+    if activeScriptUsers[userId] then
+        return "User"
+    end
+    return "Regular"
+end
+
+-- Function to check kick permissions
+local function canKick(kickerRank, targetRank)
+    if kickerRank == "Developer" then
+        return targetRank == "Admin" or targetRank == "Premium" or targetRank == "User"
+    elseif kickerRank == "Admin" then
+        return targetRank == "Premium" or targetRank == "User"
+    elseif kickerRank == "Premium" then
+        return targetRank == "User"
+    end
+    return false
+end
+
+-- Create or get RemoteEvent for script tracking
+local scriptTracker = ReplicatedStorage:FindFirstChild("ChaosScriptTracker")
+if not scriptTracker then
+    scriptTracker = Instance.new("RemoteEvent")
+    scriptTracker.Name = "ChaosScriptTracker"
+    scriptTracker.Parent = ReplicatedStorage
+end
+
+-- Create RemoteEvent for kick requests
+local kickRequest = ReplicatedStorage:FindFirstChild("ChaosKickRequest")
+if not kickRequest then
+    kickRequest = Instance.new("RemoteEvent")
+    kickRequest.Name = "ChaosKickRequest"
+    kickRequest.Parent = ReplicatedStorage
+end
+
+-- Handle script activity
+scriptTracker.OnServerEvent:Connect(function(player, action, userId)
+    if action == "ScriptActive" then
+        activeScriptUsers[userId] = true
+        
+        -- Broadcast to all clients
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            scriptTracker:FireClient(otherPlayer, "ScriptActive", userId)
+        end
+    elseif action == "ScriptInactive" then
+        activeScriptUsers[userId] = nil
+        
+        -- Broadcast to all clients
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            scriptTracker:FireClient(otherPlayer, "ScriptInactive", userId)
+        end
+    end
+end)
+
+-- Handle kick requests
+kickRequest.OnServerEvent:Connect(function(kicker, targetUserId)
+    local kickerRank = getUserRank(kicker.UserId)
+    local targetPlayer = Players:GetPlayerByUserId(targetUserId)
+    
+    if not targetPlayer then
+        return
+    end
+    
+    local targetRank = getUserRank(targetUserId)
+    local targetUsingScript = activeScriptUsers[targetUserId] == true or getUserRank(targetUserId) ~= "Regular"
+    
+    -- Check if kicker can kick target
+    if canKick(kickerRank, targetRank) and targetUsingScript then
+        -- Actually kick the player
+        targetPlayer:Kick("Kicked by " .. kicker.Name .. " (" .. kickerRank .. ")")
+    end
+end)
+
+-- Clean up when player leaves
+Players.PlayerRemoving:Connect(function(leavingPlayer)
+    activeScriptUsers[leavingPlayer.UserId] = nil
+    
+    -- Broadcast to all clients
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        scriptTracker:FireClient(otherPlayer, "ScriptInactive", leavingPlayer.UserId)
+    end
+end)
+
+-- Send initial list of active users to new players
+Players.PlayerAdded:Connect(function(newPlayer)
+    task.wait(1) -- Wait a bit for client to load
+    
+    -- Send all active users to new player
+    for userId, _ in pairs(activeScriptUsers) do
+        scriptTracker:FireClient(newPlayer, "ScriptActive", userId)
+    end
+end)
+
